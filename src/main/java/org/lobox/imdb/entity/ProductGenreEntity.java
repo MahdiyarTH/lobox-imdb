@@ -6,6 +6,8 @@ import lombok.*;
 import java.io.Serializable;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "product_genre")
 @IdClass(ProductGenreEntity.ProductGenreId.class)
 public class ProductGenreEntity {

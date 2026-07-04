@@ -1,6 +1,6 @@
 package org.lobox.imdb.repository;
 
-import org.lobox.common.data.BaseRepository;
+import org.lobox.common.data.base.BaseRepository;
 import org.lobox.imdb.entity.ProductGenreEntity;
 import org.springframework.stereotype.Repository;
 
