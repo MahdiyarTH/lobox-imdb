@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ProductRepository extends BaseRepository<ProductEntity, Long> {
+public interface ProductRepository extends BaseRepository<ProductEntity, String> {
 
     @Query("""
                 SELECT DISTINCT tb.title

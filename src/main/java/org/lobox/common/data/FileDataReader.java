@@ -6,7 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lobox.imdb.entity.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,19 +38,20 @@ public class FileDataReader {
 
     private final Set<ProductPersonEntity.ProductPersonId> seen = new HashSet<>();
 
-    //    @Async
-//    @EventListener(ApplicationReadyEvent.class)
+    @Async
+    @EventListener(ApplicationReadyEvent.class)
     public void init() throws IOException {
-        productPersonReader = new BufferedReader(new FileReader("title.principals.tsv"), 128 * 1024);
-        productPersonReader.readLine();
-
-        FileDataReader self = (FileDataReader) applicationContext.getBean("fileDataReader");
-        self.savePersons();
-        self.saveProducts();
-
-        log.info("Done");
-
-        productPersonReader.close();
+//        productPersonReader = new BufferedReader(new FileReader("title.principals.tsv"), 128 * 1024);
+//        productPersonReader.readLine();
+//
+//        FileDataReader self = (FileDataReader) applicationContext.getBean("fileDataReader");
+//        self.savePersons();
+//        self.saveProducts();
+//        self.saveRates();
+//
+//        log.info("Done");
+//
+//        productPersonReader.close();
     }
 
     @Transactional
@@ -94,6 +98,9 @@ public class FileDataReader {
                     storeGenres(split, genreMap, atomicCounter, productEntity);
                     storeProductPersons(atomicCounter, productEntity);
 
+                    if (counter % batchSize == 0)
+                        log.info("{} products saved", counter);
+
                     flushEmIfNeeded(atomicCounter.get(), "Product");
                 }
         );
@@ -130,17 +137,7 @@ public class FileDataReader {
             );
 
             counter.incrementAndGet();
-
-            if (counter.get() % batchSize == 0) {
-                long startTime = System.currentTimeMillis();
-                entityManager.flush();
-                entityManager.clear();
-                log.info("{} productGenre saved in {} ms", counter, System.currentTimeMillis() - startTime);
-            }
         }
-
-        entityManager.flush();
-        entityManager.clear();
     }
 
     private void storeProductPersons(AtomicInteger counter,
@@ -151,8 +148,15 @@ public class FileDataReader {
             while ((line = productPersonReader.readLine()) != null) {
                 String[] split = line.split("\t");
 
-                if (!split[0].equals(productEntity.getTconst()))
+                /*
+                When this if is TRUE, the line is read already, so next product will
+                miss this line, we mark and reset to this line for prevent this line missing.
+                 */
+                if (!split[0].equals(productEntity.getTconst())) {
+                    productPersonReader.reset();
                     return;
+                }
+                productPersonReader.mark(2048);
 
                 //we only care about actors, directors and writers
                 final ProductPersonEntity.Type type = ProductPersonEntity.Type.fromString(split[3]);
@@ -164,7 +168,7 @@ public class FileDataReader {
                 if (person.getId() == null)
                     continue;
 
-                final ProductPersonEntity.ProductPersonId id = new ProductPersonEntity.ProductPersonId(productEntity.getId(), person.getId(), type);
+                final ProductPersonEntity.ProductPersonId id = new ProductPersonEntity.ProductPersonId(productEntity.getTconst(), person.getId(), type);
                 if (seen.contains(id))
                     continue;
 
@@ -180,11 +184,34 @@ public class FileDataReader {
                 counter.incrementAndGet();
                 if (flushEmIfNeeded(counter.get(), "ProductPerson"))
                     seen.clear();
-
             }
         } catch (IOException ignore) {
         }
 
+    }
+
+    @Transactional
+    public void saveRates() {
+        readFile(
+                "title.ratings.tsv",
+                (counter, line) -> {
+                    //tconst[0]    averageRating[1]    numVotes[2]
+                    String[] split = line.split("\t");
+
+                    final ProductEntity productEntity = new ProductEntity();
+                    productEntity.setTconst(split[0]);
+
+                    entityManager.persist(
+                            new ProductRatingEntity(
+                                    productEntity,
+                                    Float.parseFloat(split[1]),
+                                    Integer.parseInt(split[2])
+                            )
+                    );
+
+                    flushEmIfNeeded(counter, "ProductRating");
+                }
+        );
     }
 
     private boolean flushEmIfNeeded(int counter, String entityName) {
@@ -206,12 +233,8 @@ public class FileDataReader {
             String line;
             int counter = 0;
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null)
                 lineReader.accept(counter++, line);
-
-                if (counter >= 100_000)
-                    break;
-            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

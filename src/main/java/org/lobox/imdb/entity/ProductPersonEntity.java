@@ -65,7 +65,7 @@ public class ProductPersonEntity {
     @EqualsAndHashCode
     public static class ProductPersonId implements Serializable {
 
-        private Long product;
+        private String product;
 
         private Long person;
 

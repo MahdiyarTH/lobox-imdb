@@ -8,31 +8,32 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
-@Table(name = "product_genre")
-@IdClass(ProductGenreEntity.ProductGenreId.class)
-public class ProductGenreEntity {
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "product_rating")
+@IdClass(ProductRatingEntity.ProductRatingId.class)
+public class ProductRatingEntity {
 
-    @Id
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "genre_id")
-    private GenreEntity genre;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
     private ProductEntity product;
 
+    @Column(name = "rate")
+    private Float rate;
+
+    @Column(name = "count")
+    private Integer count;
 
     @Getter
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
     @EqualsAndHashCode
-    public static class ProductGenreId implements Serializable {
+    public static class ProductRatingId implements Serializable {
 
         private String product;
-
-        private Long genre;
 
     }
 

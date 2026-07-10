@@ -1,28 +1,32 @@
 package org.lobox.imdb.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
 @Table(
-        name = "product",
-        indexes = {
-                @Index(name = "idx_tconst", columnList = "tconst")
-        }
+        name = "product"
+//        indexes = {
+//                @Index(name = "idx_tconst", columnList = "tconst")
+//        }
 )
 @Setter
 @Getter
 public class ProductEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "product_seq")
-    @SequenceGenerator(
-            name = "product_seq",
-            sequenceName = "product_seq"
-    )
-    private Long id;
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "product_seq")
+//    @SequenceGenerator(
+//            name = "product_seq",
+//            sequenceName = "product_seq"
+//    )
+//    private Long id;
 
+    @Id
     @Column(name = "tconst")
     private String tconst;
 

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ProductServiceImp
-        extends BaseServiceImp<ProductEntity, Long, ProductRepository>
+        extends BaseServiceImp<ProductEntity, String, ProductRepository>
         implements ProductService {
 
     public ProductServiceImp(ProductRepository repository) {
