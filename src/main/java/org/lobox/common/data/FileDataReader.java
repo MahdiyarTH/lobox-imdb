@@ -4,8 +4,8 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.lobox.imdb.entity.CrewEntity;
 import org.lobox.imdb.entity.GenreEntity;
+import org.lobox.imdb.entity.PersonEntity;
 import org.lobox.imdb.entity.ProductEntity;
 import org.lobox.imdb.entity.ProductGenreEntity;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FileDataReader {
 
     private final ApplicationContext applicationContext;
+    private final Map<String, Long> personIdMap = new HashMap<>();
 
     @Value("${spring.jpa.properties.hibernate.jdbc.batch_size}")
     private int batchSize;
@@ -36,9 +37,15 @@ public class FileDataReader {
     @PersistenceContext
     private EntityManager entityManager;
 
+    private BufferedReader principalReader = null;
+
     @EventListener(ApplicationReadyEvent.class)
     public void init() throws IOException {
         FileDataReader self = (FileDataReader) applicationContext.getBean("fileDataReader");
+        self.principalReader = new BufferedReader(
+                new FileReader("title.principals.tsv"),
+                128 * 1024
+        );
         self.saveNames();
         self.saveProducts();
     }
@@ -63,13 +70,13 @@ public class FileDataReader {
                 final String fullName = split[1];
                 final int deathYear = split[3].equals("\\N") ? Integer.MAX_VALUE : Integer.parseInt(split[3]);
 
-                entityManager.persist(
-                        new CrewEntity(
-                                nconst,
-                                fullName,
-                                deathYear < currentYear
-                        )
+                final PersonEntity person = new PersonEntity(
+                        nconst,
+                        fullName,
+                        deathYear < currentYear
                 );
+                entityManager.persist(person);
+                personIdMap.put(nconst, person.getId());
                 counter++;
 
                 if (counter % batchSize == 0) {
@@ -109,31 +116,8 @@ public class FileDataReader {
                 entityManager.persist(productEntity);
                 counter.incrementAndGet();
 
-                //Store genre
-                final String[] genres = split[8].split(",");
-                for (final String productGenre : genres) {
-                    if (productGenre.equals("\\N"))
-                        break;
-
-                    final ProductGenreEntity productGenreEntity = new ProductGenreEntity();
-                    productGenreEntity.setGenre(
-                            genreMap.computeIfAbsent(
-                                    productGenre,
-                                    k -> {
-                                        final GenreEntity genreEntity = new GenreEntity(k);
-                                        entityManager.persist(genreEntity);
-                                        counter.incrementAndGet();
-                                        return genreEntity;
-                                    }
-                            )
-                    );
-                    productGenreEntity.setProduct(productEntity);
-                    entityManager.persist(
-                            productGenreEntity
-                    );
-
-                    counter.incrementAndGet();
-                }
+                storeGenres(split, genreMap, counter, productEntity);
+                storePersons(split, counter, productEntity);
 
                 if (counter.get() % batchSize == 0) {
                     long startTime = System.currentTimeMillis();
@@ -154,4 +138,49 @@ public class FileDataReader {
 
     }
 
+    private void storeGenres(String[] split,
+                             Map<String, GenreEntity> genreMap,
+                             AtomicInteger counter,
+                             ProductEntity productEntity) {
+        final String[] genres = split[8].split(",");
+        for (final String productGenre : genres) {
+            if (productGenre.equals("\\N"))
+                break;
+
+            final ProductGenreEntity productGenreEntity = new ProductGenreEntity();
+            productGenreEntity.setGenre(
+                    genreMap.computeIfAbsent(
+                            productGenre,
+                            k -> {
+                                final GenreEntity genreEntity = new GenreEntity(k);
+                                entityManager.persist(genreEntity);
+                                counter.incrementAndGet();
+                                return genreEntity;
+                            }
+                    )
+            );
+            productGenreEntity.setProduct(productEntity);
+            entityManager.persist(
+                    productGenreEntity
+            );
+
+            counter.incrementAndGet();
+
+            if (counter.get() % batchSize == 0) {
+                long startTime = System.currentTimeMillis();
+                entityManager.flush();
+                entityManager.clear();
+                log.info("{} productGenre saved in {} ms", counter, System.currentTimeMillis() - startTime);
+            }
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    private void storePersons(String[] split,
+                              AtomicInteger counter,
+                              ProductEntity productEntity) {
+
+    }
 }

@@ -9,14 +9,19 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "crew")
-public class CrewEntity {
+@Table(
+        name = "person",
+        indexes = {
+                @Index(name = "idx_nconst", columnList = "nconst")
+        }
+)
+public class PersonEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "crew_seq")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "person_seq")
     @SequenceGenerator(
-            name = "crew_seq",
-            sequenceName = "crew_seq"
+            name = "person_seq",
+            sequenceName = "person_seq"
     )
     private Long id;
 
@@ -29,7 +34,7 @@ public class CrewEntity {
     @Column(name = "is_alive")
     private boolean isAlive;
 
-    public CrewEntity(String nconst, String fullName, boolean isAlive) {
+    public PersonEntity(String nconst, String fullName, boolean isAlive) {
         this.fullName = fullName;
         this.nconst = nconst;
         this.isAlive = isAlive;
