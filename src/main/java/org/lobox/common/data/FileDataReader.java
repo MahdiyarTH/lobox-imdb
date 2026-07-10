@@ -6,10 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.lobox.imdb.entity.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.event.EventListener;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +35,8 @@ public class FileDataReader {
 
     private final Set<ProductPersonEntity.ProductPersonId> seen = new HashSet<>();
 
-    @Async
-    @EventListener(ApplicationReadyEvent.class)
+    //    @Async
+//    @EventListener(ApplicationReadyEvent.class)
     public void init() throws IOException {
         productPersonReader = new BufferedReader(new FileReader("title.principals.tsv"), 128 * 1024);
         productPersonReader.readLine();
@@ -86,7 +83,7 @@ public class FileDataReader {
         final Map<String, GenreEntity> genreMap = new HashMap<>();
         final AtomicInteger atomicCounter = new AtomicInteger(1);
         readFile(
-                "title.basic.tsv",
+                "1000_title.tsv",
                 (counter, line) -> {
                     String[] split = line.split("\t");
 
