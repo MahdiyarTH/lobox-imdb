@@ -10,6 +10,8 @@ import java.io.Serializable;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "product_person")
 @IdClass(ProductPersonEntity.ProductPersonId.class)
 public class ProductPersonEntity {
@@ -24,8 +26,9 @@ public class ProductPersonEntity {
     @JoinColumn(name = "person_id")
     private PersonEntity person;
 
+    @Id
     @Column(name = "type")
-    @Convert(converter = Type.Converter.class)
+//    @Convert(converter = Type.Converter.class)
     private Type type;
 
     @Getter
@@ -33,28 +36,16 @@ public class ProductPersonEntity {
     public enum Type implements PersistableEnum<Integer> {
 
         ACTOR(1),
-        ACTRESS(2),
-        SELF(3),
         DIRECTOR(4),
-        WRITER(5),
-        PRODUCER(6),
-        COMPOSER(7),
-        CINEMATOGRAPHER(8),
-        EDITOR(9);
+        WRITER(5);
 
         private final Integer dbValue;
 
         public static Type fromString(String value) {
             return switch (value) {
-                case "actor" -> Type.ACTOR;
-                case "actress" -> Type.ACTRESS;
-                case "self" -> Type.SELF;
+                case "actor", "actress" -> Type.ACTOR;
                 case "director" -> Type.DIRECTOR;
                 case "writer" -> Type.WRITER;
-                case "producer" -> Type.PRODUCER;
-                case "composer" -> Type.COMPOSER;
-                case "cinematographer" -> Type.CINEMATOGRAPHER;
-                case "editor" -> Type.EDITOR;
                 default -> null;
             };
         }
@@ -77,6 +68,8 @@ public class ProductPersonEntity {
         private Long product;
 
         private Long person;
+
+        private Type type;
 
     }
 

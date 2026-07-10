@@ -1,5 +1,7 @@
 package org.lobox.common.data.base;
 
+import lombok.Getter;
+
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -7,6 +9,7 @@ import java.util.List;
 
 public class BaseServiceImp<ENTITY, ID extends Serializable, REPO extends BaseRepository<ENTITY, ID>> implements BaseService<ENTITY, ID, REPO> {
 
+    @Getter
     private final REPO repository;
 
     private final Class<ENTITY> entityClass;

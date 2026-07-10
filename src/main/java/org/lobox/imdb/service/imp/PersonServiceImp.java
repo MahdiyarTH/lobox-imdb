@@ -6,6 +6,9 @@ import org.lobox.imdb.repository.PersonRepository;
 import org.lobox.imdb.service.PersonService;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Service
 public class PersonServiceImp
         extends BaseServiceImp<PersonEntity, Long, PersonRepository>
@@ -15,4 +18,16 @@ public class PersonServiceImp
         super(repository);
     }
 
+    @Override
+    public Map<Long, String> getAllIdsAndNconst() {
+        return getRepository()
+                .getIdsAndNconst()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                row -> (long) row[0],
+                                row -> (String) row[1]
+                        )
+                );
+    }
 }
