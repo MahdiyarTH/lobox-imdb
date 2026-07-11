@@ -29,5 +29,22 @@ public class ImdbController {
         );
     }
 
+    @GetMapping("same-title-for-two-actors")
+    public PaginatedResponse<String> getProductsTitleWithSameDirectorAndWriter(
+            @RequestParam Long firstActorId,
+            @RequestParam Long secondActorId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size
+    ) {
+        return new PaginatedResponse<>(
+                productService.findAllTitlesWithTwoActors(
+                        firstActorId,
+                        secondActorId,
+                        HttpUtil.getPage(page),
+                        HttpUtil.getSize(size)
+                )
+        );
+    }
+
 
 }

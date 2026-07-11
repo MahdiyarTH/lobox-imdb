@@ -36,22 +36,28 @@ public class FileDataReader {
 
     private BufferedReader productPersonReader;
 
-    private final Set<ProductPersonEntity.ProductPersonId> seen = new HashSet<>();
+    private final Set<String> validProfessions = Set.of(
+            "actor",
+            "actress",
+            "writer",
+            "director"
+    );
+    private final Set<ProductPersonEntity.ProductPersonId> seenProperPersonIds = new HashSet<>();
 
     @Async
     @EventListener(ApplicationReadyEvent.class)
     public void init() throws IOException {
-//        productPersonReader = new BufferedReader(new FileReader("title.principals.tsv"), 128 * 1024);
-//        productPersonReader.readLine();
-//
-//        FileDataReader self = (FileDataReader) applicationContext.getBean("fileDataReader");
-//        self.savePersons();
-//        self.saveProducts();
-//        self.saveRates();
-//
-//        log.info("Done");
-//
-//        productPersonReader.close();
+        productPersonReader = new BufferedReader(new FileReader("title.principals.tsv"), 128 * 1024);
+        productPersonReader.readLine();
+
+        FileDataReader self = (FileDataReader) applicationContext.getBean("fileDataReader");
+        self.savePersons();
+        self.saveProducts();
+        self.saveRates();
+
+        log.info("Done");
+
+        productPersonReader.close();
     }
 
     @Transactional
@@ -60,7 +66,14 @@ public class FileDataReader {
 
         readFile("name.basics.tsv",
                 (counter, line) -> {
+                    //nconst[0]    primaryName[1]    birthYear[2]    deathYear[3]    primaryProfession[4]    knownForTitles[5]
+
                     String[] split = line.split("\t");
+                    //writer, director or actor
+                    boolean isValidPerson = Arrays.stream(split[4].split(",")).anyMatch(validProfessions::contains);
+                    if (!isValidPerson)
+                        return;
+
                     final String nconst = split[0];
                     final String fullName = split[1];
                     final int deathYear = split[3].equals("\\N") ? Integer.MAX_VALUE : Integer.parseInt(split[3]);
@@ -87,7 +100,7 @@ public class FileDataReader {
         final Map<String, GenreEntity> genreMap = new HashMap<>();
         final AtomicInteger atomicCounter = new AtomicInteger(1);
         readFile(
-                "1000_title.tsv",
+                "title.basics.tsv",
                 (counter, line) -> {
                     String[] split = line.split("\t");
 
@@ -169,7 +182,7 @@ public class FileDataReader {
                     continue;
 
                 final ProductPersonEntity.ProductPersonId id = new ProductPersonEntity.ProductPersonId(productEntity.getTconst(), person.getId(), type);
-                if (seen.contains(id))
+                if (seenProperPersonIds.contains(id))
                     continue;
 
                 final ProductPersonEntity productPersonEntity = new ProductPersonEntity(
@@ -179,11 +192,11 @@ public class FileDataReader {
                 );
 
                 entityManager.persist(productPersonEntity);
-                seen.add(id);
+                seenProperPersonIds.add(id);
 
                 counter.incrementAndGet();
                 if (flushEmIfNeeded(counter.get(), "ProductPerson"))
-                    seen.clear();
+                    seenProperPersonIds.clear();
             }
         } catch (IOException ignore) {
         }

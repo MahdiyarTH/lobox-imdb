@@ -9,4 +9,6 @@ public interface ProductService extends BaseService<ProductEntity, String, Produ
 
     Page<String> findAllSameWriteAndDirectorAlive(int page, int size);
 
+    Page<String> findAllTitlesWithTwoActors(Long firstActorId, Long secondActorId, int page, int size);
+
 }
